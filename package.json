@@ -57,6 +57,17 @@
           "type": "number",
           "default": 500,
           "description": "Preview refresh interval in milliseconds"
+        },
+        "docusaurusMdxPreview.theme": {
+          "type": "string",
+          "default": "auto",
+          "enum": ["auto", "light", "dark"],
+          "enumDescriptions": [
+            "Follow VS Code theme automatically",
+            "Always use light theme",
+            "Always use dark theme"
+          ],
+          "description": "Preview theme mode. 'auto' follows VS Code theme, or choose 'light' or 'dark' to override"
         }
       }
     }
@@ -105,9 +116,5 @@
     "remark-gfm": "^4.0.1",
     "remark-mdx-frontmatter": "^5.1.0"
   },
-  "files": [
-    "dist/",
-    "assets/"
-  ],
   "license": "MIT"
 }

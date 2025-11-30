@@ -40,4 +40,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ---
 
 ## Unreleased
-- *(No unreleased changes yet)*
+
+### Added
+- **Theme Support**: Added automatic theme detection that follows VS Code's color theme.
+  - The preview now automatically switches between light and dark themes based on VS Code's active color theme.
+  - New configuration option `docusaurusMdxPreview.theme` with three modes:
+    - `auto` (default): Automatically follows VS Code theme
+    - `light`: Forces light theme
+    - `dark`: Forces dark theme
+  - Preview updates in real-time when VS Code theme or configuration changes.

@@ -63,10 +63,26 @@ export function activate(context: vscode.ExtensionContext) {
           }
         );
 
-        previewPanel.webview.html = provider.getMDXHtmlForWebview(context, previewPanel.webview);
+        previewPanel.webview.html = provider.getMDXHtmlForWebview(previewPanel.webview);
         provider.updatePreview(previewPanel.webview, document);
 
+        // Listen to theme changes
+        const themeChangeDisposable = vscode.window.onDidChangeActiveColorTheme(() => {
+          if (previewPanel && vscode.window.activeTextEditor) {
+            provider.updatePreview(previewPanel.webview, vscode.window.activeTextEditor.document);
+          }
+        });
+
+        // Listen to configuration changes
+        const configChangeDisposable = vscode.workspace.onDidChangeConfiguration(e => {
+          if (e.affectsConfiguration('docusaurusMdxPreview.theme') && previewPanel && vscode.window.activeTextEditor) {
+            provider.updatePreview(previewPanel.webview, vscode.window.activeTextEditor.document);
+          }
+        });
+
         previewPanel.onDidDispose(() => {
+          themeChangeDisposable.dispose();
+          configChangeDisposable.dispose();
           previewPanel = undefined;
         });
       }

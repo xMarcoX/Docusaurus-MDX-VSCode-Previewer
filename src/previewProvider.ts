@@ -7,6 +7,18 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
     private readonly extensionUri: vscode.Uri
   ) {}
 
+  private isDarkTheme(themeConfig: string): boolean {
+    if (themeConfig === 'dark') {
+      return true;
+    }
+    if (themeConfig === 'light') {
+      return false;
+    }
+    // auto: detect VS Code theme
+    const theme = vscode.window.activeColorTheme;
+    return theme.kind === vscode.ColorThemeKind.Dark || theme.kind === vscode.ColorThemeKind.HighContrast;
+  }
+
   async openCustomDocument(
     uri: vscode.Uri,
     openContext: vscode.CustomDocumentOpenContext,
@@ -22,16 +34,36 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
   ): Promise<void> {
     const uri = document.uri;
     const doc = await vscode.workspace.openTextDocument(uri);
+    
+    // Set initial HTML content
+    webviewPanel.webview.html = this.getMDXHtmlForWebview(webviewPanel.webview);
+    
+    // Initial preview update
     this.updatePreview(webviewPanel.webview, doc);
 
+    // Listen to document changes
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
       if (e.document.uri.toString() === uri.toString()) {
         this.updatePreview(webviewPanel.webview, e.document);
       }
     });
 
+    // Listen to theme changes
+    const changeThemeSubscription = vscode.window.onDidChangeActiveColorTheme(() => {
+      this.updatePreview(webviewPanel.webview, doc);
+    });
+
+    // Listen to configuration changes
+    const changeConfigSubscription = vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('docusaurusMdxPreview.theme')) {
+        this.updatePreview(webviewPanel.webview, doc);
+      }
+    });
+
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
+      changeThemeSubscription.dispose();
+      changeConfigSubscription.dispose();
     });
   }
 
@@ -46,6 +78,8 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
 
     const config = vscode.workspace.getConfiguration('docusaurusMdxPreview');
     const plantumlServer = config.get<string>('plantumlServer') || 'https://kroki.io';
+    const themeConfig = config.get<string>('theme') || 'auto';
+    const isDarkTheme = this.isDarkTheme(themeConfig);
     
     let text = document.getText();
     const fileDir = path.dirname(document.fileName);
@@ -70,6 +104,7 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
         baseUrl,
         diagrams: diagrams.map(d => ({ id: d.id, svg: d.svg })),
         images,
+        isDarkTheme,
       });
     } catch (error: any) {
       console.error('MDX Process Error:', error);
@@ -80,7 +115,7 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
     }
   }
 
-  public getMDXHtmlForWebview(context: vscode.ExtensionContext, webview: vscode.Webview): string {
+  public getMDXHtmlForWebview(webview: vscode.Webview): string {
     const reactScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'js', 'react.production.min.js'));
     const reactDomScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'js', 'react-dom.production.min.js'));
     const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'css', 'styles.css'));
@@ -105,10 +140,24 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
               html, body {
                 margin: 0;
                 padding: 20px;
+                font-family: system-ui, -apple-system, sans-serif;
+                transition: background-color 0.3s ease, color 0.3s ease;
+              }
+              
+              /* Light theme styles */
+              html[data-theme="light"], 
+              html[data-theme="light"] body {
                 background-color: #ffffff;
                 color: #333333;
-                font-family: system-ui, -apple-system, sans-serif;
               }
+              
+              /* Dark theme styles */
+              html[data-theme="dark"], 
+              html[data-theme="dark"] body {
+                background-color: #1e1e1e;
+                color: #e4e4e4;
+              }
+              
               [style*="--vscode-"] {
                 all: initial;
               }
@@ -137,6 +186,10 @@ export class MDXPreviewProvider implements vscode.CustomReadonlyEditorProvider {
               const message = event.data;
               if (message.type === 'update') {
                 try {
+                  // Update theme
+                  const theme = message.isDarkTheme ? 'dark' : 'light';
+                  document.documentElement.setAttribute('data-theme', theme);
+                  
                   const code = String(message.code);
                   const baseUrl = message.baseUrl;
                   const render = new Function('options', code);
