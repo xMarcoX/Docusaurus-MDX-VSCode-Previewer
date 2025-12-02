@@ -4,7 +4,13 @@
   "description": "A VSCode extension for real-time preview of Docusaurus MDX documents with PlantUML and Mermaid support",
   "publisher": "mileskies",
   "icon": "assets/icon.png",
-  "keywords": ["mdx", "markdown", "preview", "docusaurus", "plantuml"],
+  "keywords": [
+    "mdx",
+    "markdown",
+    "preview",
+    "docusaurus",
+    "plantuml"
+  ],
   "version": "1.0.2",
   "engines": {
     "vscode": "^1.97.0"
@@ -61,7 +67,11 @@
         "docusaurusMdxPreview.theme": {
           "type": "string",
           "default": "auto",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "enumDescriptions": [
             "Follow VS Code theme automatically",
             "Always use light theme",
@@ -74,7 +84,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package",
+    "package": "npx @vscode/vsce package",
     "compile": "webpack",
     "watch": "webpack --watch",
     "pretest": "npm run compile && npm run lint",
@@ -94,6 +104,7 @@
     "@typescript-eslint/parser": "^8.22.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.7.1",
     "eslint": "^9.19.0",
     "ts-loader": "^9.5.2",
     "type-fest": "^4.36.0",
